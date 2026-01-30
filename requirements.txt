@@ -1,0 +1,15 @@
+qdrant-client
+python-dotenv
+typer
+rich
+requests
+tqdm
+SQLAlchemy
+rapidfuzz
+pymysql
+sentence-transformers
+transformers
+torch
+numpy
+cryptography
+

@@ -1,0 +1,40 @@
+# Environment and secrets (keep .env.example for install instructions)
+.env
+.env.*
+!.env.example
+
+# Local data sources (kept out of git)
+data/
+
+# Local DBs and metrics
+*.sqlite
+traces/
+
+# Virtual environments
+.venv/
+
+# Python caches and artifacts
+__pycache__/
+*.py[cod]
+*.pyo
+.pytest_cache/
+.mypy_cache/
+.cache/
+.coverage
+.coverage.*
+htmlcov/
+dist/
+build/
+*.egg-info/
+
+# OS/editor files
+.DS_Store
+.vscode/
+.idea/
+.cursor/
+
+# Logs
+*.log
+logs/
+
+
