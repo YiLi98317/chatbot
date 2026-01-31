@@ -61,14 +61,23 @@ def retrieve_top_k(
         enable_planner = True
         planner_base_url = "http://localhost:11434"
         planner_model = "llama3.1"
-    plan: QueryPlan = plan_query(
-        raw_query=query,
-        ollama_base_url=planner_base_url,
-        model=planner_model,
-        supported_tables=supported_tables,
-        enable_llm=enable_planner,
-        debug=debug,
-    )
+    try:
+        print("[plan] Starting query plan phase...", flush=True)
+        t_plan_start = time.time()
+        plan: QueryPlan = plan_query(
+            raw_query=query,
+            ollama_base_url=planner_base_url,
+            model=planner_model,
+            supported_tables=supported_tables,
+            enable_llm=enable_planner,
+            debug=debug,
+        )
+        t_plan_elapsed = time.time() - t_plan_start
+        print(f"[plan] Query plan phase done in {t_plan_elapsed:.2f}s", flush=True)
+    except Exception as e:
+        if debug:
+            print(f"[plan] plan_query failed: {e}", flush=True)
+        raise
     if debug:
         try:
             print("QUERY_PLAN:")

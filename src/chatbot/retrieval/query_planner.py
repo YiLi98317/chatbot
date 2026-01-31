@@ -2,10 +2,21 @@ from __future__ import annotations
 
 import json
 import re
+import sys
+import time
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 import requests
+
+
+def _plan_log(msg: str, debug_only: bool = False, debug: bool = False) -> None:
+    if debug_only and not debug:
+        return
+    try:
+        print(f"[plan] {msg}", flush=True)
+    except Exception:
+        pass
 
 
 @dataclass(frozen=True)
@@ -115,7 +126,7 @@ def _ollama_generate_json(prompt: str, model: str, base_url: str, temperature: f
                 "num_predict": int(num_predict),
             },
         },
-        timeout=60,
+        timeout=300,  # CPU inference (e.g. DeepSeek R1) can exceed 60s
     )
     resp.raise_for_status()
     data = resp.json()
@@ -508,10 +519,18 @@ def plan_query(
         supported_tables = SUPPORTED_TABLES_FALLBACK
     supported_tables = list(supported_tables)
     if not enable_llm:
+        _plan_log("LLM disabled, using deterministic fallback", debug=False, debug_only=False)
         return deterministic_fallback_plan(raw_query, supported_tables)
     try:
+        _plan_log("Building planner prompt...", debug_only=False, debug=False)
+        t0 = time.time()
         prompt = _build_planner_prompt(raw_query, supported_tables)
+        _plan_log(f"Prompt built in {time.time() - t0:.2f}s ({len(prompt)} chars), calling Ollama (model={model}, base_url={ollama_base_url})...", debug_only=False, debug=False)
+        sys.stdout.flush()
+        t1 = time.time()
         raw_out = _ollama_generate_json(prompt=prompt, model=model, base_url=ollama_base_url, temperature=0.1, num_predict=256)
+        elapsed = time.time() - t1
+        _plan_log(f"Ollama returned in {elapsed:.2f}s, parsing JSON...", debug_only=False, debug=False)
         if debug:
             try:
                 print("PLANNER_RAW_OUTPUT:")
@@ -576,12 +595,14 @@ def plan_query(
                     clarification_question=plan.clarification_question,
                 )
         # Always perform deterministic normalization post-processing
+        _plan_log("Plan validated, running post-process...", debug_only=True, debug=debug)
         return _post_process_plan(plan)
     except Exception as e:
+        _plan_log(f"Planner error: {type(e).__name__}: {e}, using fallback", debug_only=False, debug=False)
         if debug:
             try:
-                print("PLANNER_ERROR:", type(e).__name__, str(e))
-                print("PLANNER_FALLBACK_USED: true")
+                print("PLANNER_ERROR:", type(e).__name__, str(e), flush=True)
+                print("PLANNER_FALLBACK_USED: true", flush=True)
             except Exception:
                 pass
         return _post_process_plan(deterministic_fallback_plan(raw_query, supported_tables))
