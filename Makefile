@@ -2,8 +2,8 @@ PROJECT_ROOT := $(shell pwd)
 VENV := $(PROJECT_ROOT)/.venv
 PY := $(VENV)/bin/python
 PIP := $(VENV)/bin/pip
-# Use system Python for venv when in conda (conda's Python often breaks venv)
-VENV_PYTHON := $(shell command -v /usr/bin/python3 2>/dev/null || command -v python3 2>/dev/null)
+# Prefer Python 3.10+ (required for torch 2.6+ and sentence_transformers); avoid conda's python for venv
+VENV_PYTHON := $(shell command -v python3.12 2>/dev/null || command -v python3.11 2>/dev/null || command -v python3.10 2>/dev/null || command -v /usr/bin/python3 2>/dev/null || command -v python3 2>/dev/null)
 
 # Convenience flag: `make chat debug=1` or `make chat DEBUG=1`
 DEBUG ?= 0
@@ -17,6 +17,7 @@ venv:
 	@test -d $(VENV) || $(VENV_PYTHON) -m venv $(VENV)
 
 install: venv
+	@$(PY) -c "import sys; sys.exit(0 if sys.version_info >= (3, 10) else 1)" || (echo "Error: Python 3.10+ required. Install with: brew install python@3.11" && exit 1)
 	@$(PIP) install --upgrade pip
 	@$(PIP) install -r requirements.txt
 

@@ -66,7 +66,7 @@ ollama pull llama3.1
 If using DeepSeek for Chinese generation:
 
 ```bash
-ollama pull deepseek-chat
+ollama pull deepseek-r1
 ```
 
 4. Start services:
